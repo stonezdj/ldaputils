@@ -1,1 +1,1 @@
-LDAP utilitys
+LDAP utilities

@@ -19,12 +19,50 @@ type LDAPConfigAll struct {
 	LDAPGroupConf models.LdapGroupConf `json:"ldap_group_conf,omitempty"`
 }
 
+var jsonFileContent = `{
+    "ldap_conf":
+    {
+    "ldap_url":"10.193.23.3",
+    "ldap_search_dn":"cn=admin,dc=example,dc=com",
+    "ldap_search_password":"admin",
+    "ldap_base_dn":"dc=example,dc=com",
+    "ldap_filter":"",
+    "ldap_uid":"cn",
+    "ldap_scope": 2,
+    "ldap_verify_cert": false
+    },
+    "ldap_group_conf":
+    {
+    "ldap_group_base_dn":"dc=example,dc=com",
+    "ldap_group_filter": "objectClass=groupOfNames",
+    "ldap_group_name_attribute":"cn",
+    "ldap_group_search_scope":2,
+    "ldap_group_admin_dn":"",
+    "ldap_group_membership_attribute": "memberof"
+    }
+}`
+
+func genLdapJson() {
+	f, err := os.Create("ldap.json")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+	f.Write([]byte(jsonFileContent))
+}
+
 func main() {
 	configJSON := flag.String("config", "ldap.json", "LDAP json file")
 	username := flag.String("username", "", "search this username in LDAP")
 	flag.Parse()
 
 	jsonFile, err := os.Open(*configJSON)
+	if os.IsNotExist(err) {
+		fmt.Println("The ldap.json file doesn't exist, create a new one")
+		genLdapJson()
+		return
+	}
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -38,7 +76,7 @@ func main() {
 
 	fmt.Println("================================================")
 	fmt.Println("Verify basic LDAP information")
-	fmt.Println("Start to ping LDAP server")
+	fmt.Printf("Start to ping LDAP server: %v\n", ldapConfigAll.LDAPConf.LdapURL)
 
 	session, err := ldap.CreateWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
 	if err != nil {

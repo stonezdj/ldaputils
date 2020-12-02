@@ -79,16 +79,7 @@ func main() {
 	fmt.Println("Verify basic LDAP information")
 
 	session, err := ldap.CreateWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
-	if err != nil {
-		fmt.Printf("Error %+v\n", err)
-		return
-	}
-	err, done := Ping(ldapConfigAll, err)
 	CheckError(err)
-	if done {
-		return
-	}
-
 	session.Open()
 	defer session.Close()
 	err = session.Bind(ldapConfigAll.LDAPConf.LdapSearchDn, ldapConfigAll.LDAPConf.LdapSearchPassword)
@@ -109,6 +100,10 @@ func main() {
 		if ok := VerifyAdminGroupConfig(ldapConfigAll, session); !ok {
 			fmt.Println("test failed")
 			return
+		}
+	case "ping":
+		if ok := Ping(ldapConfigAll, err); !ok {
+			fmt.Println("ping test failed!")
 		}
 	case "bind":
 		fmt.Println("bind success!")
@@ -202,15 +197,15 @@ func SearchUser(session *ldap.Session, username *string) bool {
 	return true
 }
 
-func Ping(ldapConfigAll LDAPConfigAll, err error) (error, bool) {
+func Ping(ldapConfigAll LDAPConfigAll, err error) bool {
 	fmt.Printf("Start to ping LDAP server: %v\n", ldapConfigAll.LDAPConf.LdapURL)
 	err = ldap.ConnectionTestWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
 	if err != nil {
 		fmt.Printf("Error at connection test, %+v\n", err)
-		return nil, true
+		return false
 	}
 	DumpResult("Success to ping LDAP server")
-	return err, false
+	return true
 }
 
 func stringInSlice(a string, list []string) bool {

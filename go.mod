@@ -2,4 +2,7 @@ module github.com/goharbor/ldaputils
 
 go 1.14
 
-require github.com/goharbor/harbor/src v0.0.0-20200928105253-d5322c3d455f
+require (
+	github.com/cenkalti/backoff v2.1.1+incompatible // indirect
+	github.com/goharbor/harbor/src v0.0.0-20201202011710-792a3c8c2701
+)

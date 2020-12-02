@@ -54,7 +54,8 @@ func genLdapJson() {
 
 func main() {
 	configJSON := flag.String("config", "ldap.json", "LDAP json file")
-	username := flag.String("username", "", "search this username in LDAP")
+	username := flag.String("username", "mike_0", "search this username in LDAP")
+	testName := flag.String("test", "basic", "run the test")
 	flag.Parse()
 
 	jsonFile, err := os.Open(*configJSON)
@@ -76,57 +77,52 @@ func main() {
 
 	fmt.Println("================================================")
 	fmt.Println("Verify basic LDAP information")
-	fmt.Printf("Start to ping LDAP server: %v\n", ldapConfigAll.LDAPConf.LdapURL)
 
 	session, err := ldap.CreateWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
 	if err != nil {
 		fmt.Printf("Error %+v\n", err)
 		return
 	}
-	err = ldap.ConnectionTestWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
-	if err != nil {
-		fmt.Printf("Error at connection test, %+v\n", err)
+	err, done := Ping(ldapConfigAll, err)
+	CheckError(err)
+	if done {
 		return
 	}
-	DumpResult("Success to ping LDAP server")
-	fmt.Println("Start to search users")
+
 	session.Open()
 	defer session.Close()
-	session.Bind(ldapConfigAll.LDAPConf.LdapSearchDn, ldapConfigAll.LDAPConf.LdapSearchPassword)
-	result, err := session.SearchUser("")
-	if err != nil {
-		DumpResult(fmt.Sprintf("Failed to search LDAP, error %v", err))
-		return
-	}
-	if len(result) == 0 {
-		DumpResult(fmt.Sprintf("No LDAP user found in current search conditions."))
-	} else {
-		DumpResult(fmt.Sprintf("Found %d LDAP users in current search conditions", len(result)))
-	}
-	if len(*username) > 0 {
-		fmt.Printf("Trying to find user %v\n", *username)
-		singleUser, err := session.SearchUser(*username)
-		if err != nil {
-			fmt.Println(err)
+	err = session.Bind(ldapConfigAll.LDAPConf.LdapSearchDn, ldapConfigAll.LDAPConf.LdapSearchPassword)
+	CheckError(err)
+
+	switch *testName {
+	case "basic":
+		if ok := SearchUser(session, username); !ok {
+			fmt.Println("test failed")
 			return
 		}
-		if len(singleUser) == 0 {
-			DumpResult(fmt.Sprintf("The user %v is not found!", *username))
-		} else {
-			DumpResult(fmt.Sprintf("User %v found!", *username))
-			DumpResult(fmt.Sprintf("User in the group: %+v", singleUser[0].GroupDNList))
-
+	case "group":
+		if ok := VerifyGroupConfig(ldapConfigAll, session); !ok {
+			fmt.Println("test failed")
+			return
 		}
+	case "admingroup":
+		if ok := VerifyAdminGroupConfig(ldapConfigAll, session); !ok {
+			fmt.Println("test failed")
+			return
+		}
+	case "bind":
+		fmt.Println("bind success!")
 	}
-	fmt.Println("================================================")
+}
 
+func VerifyGroupConfig(ldapConfigAll LDAPConfigAll, session *ldap.Session) bool {
 	fmt.Println("Verify LDAP group configurations")
 	if len(ldapConfigAll.LDAPGroupConf.LdapGroupBaseDN) > 0 {
 		fmt.Println("Trying to search group in current search conditions.")
-		groups, err := session.SearchGroupByName("")
+		groups, err := session.SearchGroupByName("harbor_group_0")
 		if err != nil {
 			fmt.Println(err)
-			return
+			return false
 		}
 		if len(groups) == 0 {
 			DumpResult("No user group found!")
@@ -134,13 +130,22 @@ func main() {
 			DumpResult(fmt.Sprintf("Found %v groups in current condition.", len(groups)))
 		}
 	}
+	return true
+}
+func CheckError(err error) {
+	if err != nil {
+		fmt.Printf("Error %v,\n", err)
+		os.Exit(1)
+	}
+}
 
+func VerifyAdminGroupConfig(ldapConfigAll LDAPConfigAll, session *ldap.Session) bool {
 	if len(ldapConfigAll.LDAPGroupConf.LdapGroupAdminDN) > 0 {
-		fmt.Println("Trying to search the group with admin privileges.")
+		fmt.Printf("Trying to search the group with admin privileges, ldap group admin dn: %v\n", ldapConfigAll.LDAPGroupConf.LdapGroupAdminDN)
 		groups, err := session.SearchGroupByDN(ldapConfigAll.LDAPGroupConf.LdapGroupAdminDN)
 		if err != nil {
 			fmt.Println(err)
-			return
+			return false
 		}
 
 		DumpResult(fmt.Sprintf("Found %v groups with admin privileges.", len(groups)))
@@ -163,7 +168,51 @@ func main() {
 
 	}
 	fmt.Println("================================================")
+	return true
 }
+
+func SearchUser(session *ldap.Session, username *string) bool {
+	fmt.Println("Start to search users")
+	result, err := session.SearchUser("mike_0")
+	if err != nil {
+		DumpResult(fmt.Sprintf("Failed to search LDAP, error %v", err))
+		return false
+	}
+	if len(result) == 0 {
+		DumpResult(fmt.Sprintf("No LDAP user found in current search conditions."))
+	} else {
+		DumpResult(fmt.Sprintf("Found %d LDAP users in current search conditions", len(result)))
+	}
+	if len(*username) > 0 {
+		fmt.Printf("Trying to find user %v\n", *username)
+		singleUser, err := session.SearchUser(*username)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		if len(singleUser) == 0 {
+			DumpResult(fmt.Sprintf("The user %v is not found!", *username))
+		} else {
+			DumpResult(fmt.Sprintf("User %v found!", *username))
+			DumpResult(fmt.Sprintf("User in the group: %+v", singleUser[0].GroupDNList))
+
+		}
+	}
+	fmt.Println("================================================")
+	return true
+}
+
+func Ping(ldapConfigAll LDAPConfigAll, err error) (error, bool) {
+	fmt.Printf("Start to ping LDAP server: %v\n", ldapConfigAll.LDAPConf.LdapURL)
+	err = ldap.ConnectionTestWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
+	if err != nil {
+		fmt.Printf("Error at connection test, %+v\n", err)
+		return nil, true
+	}
+	DumpResult("Success to ping LDAP server")
+	return err, false
+}
+
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

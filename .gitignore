@@ -3,3 +3,5 @@
 /.idea/*.xml
 /.idea/*.iml
 
+/dao/test.db
+/test.db

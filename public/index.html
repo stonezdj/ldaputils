@@ -1,0 +1,165 @@
+<!-- public/index.html -->
+
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <title>LDAP config testing App</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    <!-- JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!-- Vue.js -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/0.7.0/vue-resource.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <h2>Ldap Configs</h2>
+            <ul class="list-group">
+                <li class="list-group-item" v-for="config in configs">
+                    {{ config.name }}
+                    <span class="pull-right">
+                                <button class="btn btn-xs btn-danger" @click="deleteConfig($index)">
+                                    <i class="fa fa-trash-o" aria-hidden="true"></i>
+                                </button>
+                    </span>
+                </li>
+            </ul>
+            <div class="input-group">
+                <table>
+                    <tr>
+                        <td>Config Name</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.name"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP url</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_url"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP base DN</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_base_dn"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP search DN</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_dn"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP search Password</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_password"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP filter</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_filter"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP UID</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" value="cn"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Verify Cert</td>
+                        <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" value="false"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP scope</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" value="2"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Base DN</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_base_dn"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Filter</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_filter"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Name Attribute</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" value="cn"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Search Scope</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" value="2"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Membership Attribute</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" value="memberof"/></td>
+                    </tr>
+                    <tr>
+                        <td>LDAP Group Admin DN</td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_admin_dn"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" align="center">
+                        <button type="button" @click="createConfig">Create</button>
+                        </td>
+                    </tr>
+                </table>
+
+            </div><!-- /input-group -->
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: 'body',
+
+            data: {
+                configs: [],
+                newConfig: {}
+            },
+
+            // This is run whenever the page is loaded to make sure we have a current task list
+            created: function() {
+                // Use the vue-resource $http client to fetch data from the /configs route
+                this.$http.get('/configs').then(function(response) {
+                    console.log("load data....")
+                    this.configs = response.data.items ? response.data.items : []
+                })
+                console.log("load file")
+            },
+
+            methods: {
+                createConfig: function() {
+                    if (!$.trim(this.newConfig.name)) {
+                        this.newConfig = {}
+                        return
+                    }
+
+                    // Post the new task to the /tasks route using the $http client
+                    this.$http.put('/configs', this.newConfig).success(function(response) {
+                        this.newConfig.id = response.created
+                        this.configs.push(this.newConfig)
+                        console.log("Config created!")
+                        console.log(this.newConfig)
+                        this.newConfig = {}
+                    }).error(function(error) {
+                        console.log(error)
+                    });
+                },
+
+                deleteConfig: function(index) {
+                    console.log("index:"+index)
+                    // Use the $http client to delete a task by its id
+                    this.$http.delete('/configs/' + this.configs[index].ID).success(function(response) {
+                        this.configs.splice(index, 1)
+                        console.log("Config deleted!")
+                    }).error(function(error) {
+                        console.log(error)
+                    })
+                }
+            }
+        })
+    </script>
+</div>
+</body>
+</html>

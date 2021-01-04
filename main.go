@@ -4,6 +4,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	configModels "github.com/goharbor/ldaputils/dao/models"
+	"github.com/goharbor/ldaputils/handlers"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"os"
 
@@ -11,6 +16,7 @@ import (
 
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/lib/log"
+	"gorm.io/driver/sqlite"
 )
 
 //LDAPConfigAll ...
@@ -53,10 +59,18 @@ func genLdapJson() {
 }
 
 func main() {
+	webserver := flag.Bool("webserver", false, "Run ldap utils as a web server")
 	configJSON := flag.String("config", "ldap.json", "LDAP json file")
 	username := flag.String("username", "mike_0", "search this username in LDAP")
-	testName := flag.String("test", "basic", "run the test")
+	testName := flag.String("test", "basic", "run the test, can be basic, admin, admingroup, bind etc")
+	password := flag.String("password", "", "The password of the ldap user")
+
 	flag.Parse()
+
+	if *webserver {
+		WebServer()
+		return
+	}
 
 	jsonFile, err := os.Open(*configJSON)
 	if os.IsNotExist(err) {
@@ -107,6 +121,12 @@ func main() {
 		}
 	case "bind":
 		fmt.Println("bind success!")
+
+	case "login":
+		if ok := Login(session, *username, *password); !ok {
+			fmt.Println("failed to login user!")
+		}
+		fmt.Println("Login user success!")
 	}
 }
 
@@ -189,8 +209,13 @@ func SearchUser(session *ldap.Session, username *string) bool {
 			DumpResult(fmt.Sprintf("The user %v is not found!", *username))
 		} else {
 			DumpResult(fmt.Sprintf("User %v found!", *username))
-			DumpResult(fmt.Sprintf("User in the group: %+v", singleUser[0].GroupDNList))
-
+			if len(singleUser[0].GroupDNList) == 0 {
+				DumpResult("Current user is not in any ldap group.")
+			} else {
+				for _, dn := range singleUser[0].GroupDNList {
+					DumpResult(fmt.Sprintf("User in the group with dn: [%v] OnboardGroup: %v", dn, SearchGroup(session, dn)))
+				}
+			}
 		}
 	}
 	fmt.Println("================================================")
@@ -208,6 +233,35 @@ func Ping(ldapConfigAll LDAPConfigAll, err error) bool {
 	return true
 }
 
+func SearchGroup(session *ldap.Session, groupDN string) bool {
+	groups, err := session.SearchGroupByDN(groupDN)
+	CheckError(err)
+	if len(groups) == 0 {
+		return false
+	}
+	return true
+}
+
+func Login(session *ldap.Session, username, password string) bool {
+	ldapUsers, err := session.SearchUser(username)
+	CheckError(err)
+	if len(ldapUsers) == 0 {
+		log.Warningf("Not found an entry.")
+		return false
+	} else if len(ldapUsers) != 1 {
+		log.Warningf("Found more than one entry.")
+		return false
+	}
+	log.Debugf("Found ldap user %+v", ldapUsers[0])
+
+	dn := ldapUsers[0].DN
+	if err = session.Bind(dn, password); err != nil {
+		log.Warningf("Failed to bind user, username: %s, dn: %s, error: %v", username, dn, err)
+		return false
+	}
+	return true
+}
+
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
@@ -220,4 +274,28 @@ func stringInSlice(a string, list []string) bool {
 // DumpResult ...
 func DumpResult(msg string) {
 	fmt.Println("==> " + msg)
+}
+
+func WebServer() {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect to database")
+	}
+	db.AutoMigrate(&configModels.LdapConfig{})
+	// Echo instance
+	e := echo.New()
+
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	// Routes
+	e.File("/", "public/index.html")
+	e.File("/test", "public/test.html")
+	e.GET("/configs", handlers.GetConfigs(db))
+	e.PUT("/configs", handlers.PutConfig(db))
+	e.DELETE("/configs/:id", handlers.DeleteConfig(db))
+	e.POST("/testconfig", handlers.TestingConfig(db))
+	// Start server
+	e.Logger.Fatal(e.Start(":8080"))
 }

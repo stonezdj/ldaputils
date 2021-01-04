@@ -1,0 +1,96 @@
+<!-- public/index.html -->
+
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+    <title>LDAP config testing App</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+    <!-- JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!-- Vue.js -->
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/0.7.0/vue-resource.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <h2>Ldap Configs</h2>
+            <ul class="list-group">
+
+                <select class="form-select" aria-label="Default select example" v-model="selectedID" >
+                    <option v-for="config in configs" v-bind:value="config.ID">
+                        {{ config.name }}
+                    </option>
+                </select>
+            </ul>
+            <ul>
+                <button type="button" @click="testConnection">Test connection</button>
+            </ul>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: 'body',
+
+            data: {
+                selectedID: {},
+                configs: []
+            },
+
+            // This is run whenever the page is loaded to make sure we have a current task list
+            created: function() {
+                // Use the vue-resource $http client to fetch data from the /configs route
+                this.$http.get('/configs').then(function(response) {
+                    console.log("load data....")
+                    this.configs = response.data.items ? response.data.items : []
+                })
+                console.log("load file")
+            },
+
+            methods: {
+                testConnection: function() {
+                    if (!$.trim(this.selectedID)) {
+                        console.log("not selected")
+                        return
+                    }
+
+                    // Post the new task to the /tasks route using the $http client
+                    this.$http.put('/configs', this.newConfig).success(function(response) {
+                        this.newConfig.id = response.created
+                        this.configs.push(this.newConfig)
+                        console.log("Config created!")
+                        console.log(this.newConfig)
+                        this.newConfig = {}
+                    }).error(function(error) {
+                        console.log(error)
+                    });
+                },
+
+                deleteConfig: function(index) {
+                    console.log("index:"+index)
+                    // Use the $http client to delete a task by its id
+                    this.$http.delete('/configs/' + this.configs[index].ID).success(function(response) {
+                        this.configs.splice(index, 1)
+                        console.log("Config deleted!")
+                    }).error(function(error) {
+                        console.log(error)
+                    })
+                }
+            }
+        })
+    </script>
+</div>
+</body>
+</html>

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/goharbor/harbor/src/common/utils/ldap"
 	"github.com/goharbor/ldaputils/dao"
 	"github.com/goharbor/ldaputils/dao/models"
 	"github.com/labstack/echo/v4"
@@ -11,6 +12,9 @@ import (
 )
 
 type H map[string]interface{}
+type Test struct {
+	Type string `json:"type"`
+}
 
 // GetConfigs endpoint
 func GetConfigs(db *gorm.DB) echo.HandlerFunc {
@@ -45,9 +49,32 @@ func DeleteConfig(db *gorm.DB) echo.HandlerFunc {
 
 func TestingConfig(db *gorm.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		id, _ := strconv.Atoi(c.QueryParam("id"))
+		result := &models.LDAPTestResult{}
+		id, _ := strconv.Atoi(c.Param("id"))
+		test := &Test{}
+		err := c.Bind(test)
+		if err != nil {
+			return c.JSON(http.StatusOK, result.FailWithError(err))
+		}
 		//get configurations and run the ldap ping testing, send out the message
+		cfg := dao.DAO.Get(db, id)
+		if cfg == nil {
+			return c.JSON(http.StatusOK, models.LDAPTestResult{Success: false,
+				Message: []string{fmt.Sprintf("Configure not found: %v", id)}})
+		}
+
+		result = Ping(cfg)
 		fmt.Printf("the testing id is %v\n", id)
-		return c.JSON(http.StatusOK, models.LDAPTestResult{Success: true, Message: "Test passed"})
+		return c.JSON(http.StatusOK, result)
 	}
+}
+
+func Ping(ldapCfg *models.LdapConfig) *models.LDAPTestResult {
+	result := &models.LDAPTestResult{}
+	fmt.Printf("Start to ping LDAP server: %v\n", ldapCfg.LdapURL)
+	err := ldap.ConnectionTestWithAllConfig(ldapCfg.LdapConf, ldapCfg.LdapGroupConf)
+	if err != nil {
+		return result.Fail().WithMsg(fmt.Sprintf("Error at connection test, %+v", err))
+	}
+	return result.Suc().WithMsg("Ping test success")
 }

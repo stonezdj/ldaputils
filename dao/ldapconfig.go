@@ -16,6 +16,15 @@ func (l *LdapConfigDAO) Query(db *gorm.DB) []models.LdapConfig {
 	return result
 }
 
+func (l *LdapConfigDAO) Get(db *gorm.DB, id int) *models.LdapConfig {
+	cfg := &models.LdapConfig{}
+	db.First(cfg, id)
+	if cfg.ID > 0 {
+		return cfg
+	}
+	return nil // not found
+}
+
 func (l *LdapConfigDAO) Add(db *gorm.DB, config *models.LdapConfig) {
 	db.Create(config)
 	return

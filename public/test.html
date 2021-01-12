@@ -35,8 +35,22 @@
                     </option>
                 </select>
             </ul>
+            <ul class="list-group">
+                <select class="form-select" aria-label="Default select example" v-model="test.type">
+                    <option value="ping">Ping test</option>
+                </select>
+            </ul>
+
             <ul>
-                <button type="button" @click="testConnection">Test connection</button>
+                    <button type="button" @click="testConnection">Test</button>
+            </ul>
+            <ul>
+                <p>
+                    {{ resultMessage }}
+                </p>
+            </ul>
+            <ul>
+
             </ul>
         </div>
     </div>
@@ -46,7 +60,11 @@
 
             data: {
                 selectedID: {},
-                configs: []
+                test:{type:""},
+                configs: [],
+                success: false,
+                message: [],
+                resultMessage: ""
             },
 
             // This is run whenever the page is loaded to make sure we have a current task list
@@ -67,26 +85,17 @@
                     }
 
                     // Post the new task to the /tasks route using the $http client
-                    this.$http.put('/configs', this.newConfig).success(function(response) {
-                        this.newConfig.id = response.created
-                        this.configs.push(this.newConfig)
-                        console.log("Config created!")
-                        console.log(this.newConfig)
-                        this.newConfig = {}
+                    this.$http.post('/testconfig/'+this.selectedID, this.test).success(function(response) {
+                        this.success = response.success
+                        this.message = response.message
+
+                        console.log("Ping test done!")
+                        console.log(this.success)
+                        console.log(this.message[0])
+                        this.resultMessage = response.message.join(",")
                     }).error(function(error) {
                         console.log(error)
                     });
-                },
-
-                deleteConfig: function(index) {
-                    console.log("index:"+index)
-                    // Use the $http client to delete a task by its id
-                    this.$http.delete('/configs/' + this.configs[index].ID).success(function(response) {
-                        this.configs.splice(index, 1)
-                        console.log("Config deleted!")
-                    }).error(function(error) {
-                        console.log(error)
-                    })
                 }
             }
         })

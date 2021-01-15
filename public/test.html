@@ -29,8 +29,8 @@
             <h2>Ldap Configs</h2>
             <ul class="list-group">
 
-                <select class="form-select" aria-label="Default select example" v-model="selectedID" >
-                    <option v-for="config in configs" v-bind:value="config.ID">
+                <select class="form-select" aria-label="Default select example" v-model="selectedIndex" @change="selectChange" >
+                    <option v-for="config in configs" v-bind:value="$index">
                         {{ config.name }}
                     </option>
                 </select>
@@ -38,7 +38,26 @@
             <ul class="list-group">
                 <select class="form-select" aria-label="Default select example" v-model="test.type">
                     <option value="ping">Ping test</option>
+                    <option value="search_user">Search User</option>
                 </select>
+            </ul>
+            <ul>
+                <input class="form-text" type="text" size="20" v-model = "test.user">
+            </ul>
+            <ul>
+                <p>Current configure</p>
+                <table>
+                    <tr><td>ldap_url</td><td> {{ selectedConfig.ldap_url }}</td></tr>
+                    <tr><td>ldap_base_dn</td><td> {{ selectedConfig.ldap_base_dn }}</td></tr>
+                    <tr><td>ldap_search_dn</td><td> {{ selectedConfig.ldap_search_dn }}</td></tr>
+                    <tr><td>ldap_filter</td><td> {{ selectedConfig.ldap_filter }}</td></tr>
+                    <tr><td>ldap_scope</td><td> {{ selectedConfig.ldap_scope }}</td></tr>
+                    <tr><td>ldap_group_base_dn</td><td> {{ selectedConfig.ldap_group_base_dn }}</td></tr>
+                    <tr><td>ldap_group_filter</td><td> {{ selectedConfig.ldap_group_filter }}</td></tr>
+                    <tr><td>ldap_group_search_scope</td><td> {{ selectedConfig.ldap_group_search_scope }}</td></tr>
+                    <tr><td>ldap_group_admin_dn</td><td> {{ selectedConfig.ldap_group_admin_dn }}</td></tr>
+                </table>
+
             </ul>
 
             <ul>
@@ -59,8 +78,9 @@
             el: 'body',
 
             data: {
-                selectedID: {},
-                test:{type:""},
+                selectedIndex: {},
+                selectedConfig:{},
+                test:{type:"", user:""},
                 configs: [],
                 success: false,
                 message: [],
@@ -79,13 +99,14 @@
 
             methods: {
                 testConnection: function() {
-                    if (!$.trim(this.selectedID)) {
+                    if (!$.trim(this.selectedIndex)) {
                         console.log("not selected")
                         return
                     }
-
+                    selectID = this.configs[this.selectedIndex].ID
+                    console.log("select id is ", selectID)
                     // Post the new task to the /tasks route using the $http client
-                    this.$http.post('/testconfig/'+this.selectedID, this.test).success(function(response) {
+                    this.$http.post('/testconfig/'+selectID, this.test).success(function(response) {
                         this.success = response.success
                         this.message = response.message
 
@@ -96,6 +117,14 @@
                     }).error(function(error) {
                         console.log(error)
                     });
+                },
+                selectChange: function() {
+                    if (!$.trim(this.selectedIndex)) {
+                        console.log("not selected")
+                        return
+                    }
+                    console.log("selected: "+ this.selectedIndex)
+                    this.selectedConfig = this.configs[this.selectedIndex]
                 }
             }
         })

@@ -14,6 +14,12 @@ import (
 type H map[string]interface{}
 type Test struct {
 	Type string `json:"type"`
+	User string `json:"user"`
+}
+
+var TestingHandlerMap = map[string]TestingHandler{
+	"ping":        Ping,
+	"search_user": SearchUser,
 }
 
 // GetConfigs endpoint
@@ -62,14 +68,19 @@ func TestingConfig(db *gorm.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusOK, models.LDAPTestResult{Success: false,
 				Message: []string{fmt.Sprintf("Configure not found: %v", id)}})
 		}
-
-		result = Ping(cfg)
+		h, ok := TestingHandlerMap[test.Type]
+		if !ok {
+			return c.JSON(http.StatusOK, result.FailWithError(fmt.Errorf("The testing command %v is not found", test.Type)))
+		}
+		result = h(cfg, test)
 		fmt.Printf("the testing id is %v\n", id)
 		return c.JSON(http.StatusOK, result)
 	}
 }
 
-func Ping(ldapCfg *models.LdapConfig) *models.LDAPTestResult {
+type TestingHandler func(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult
+
+func Ping(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {
 	result := &models.LDAPTestResult{}
 	fmt.Printf("Start to ping LDAP server: %v\n", ldapCfg.LdapURL)
 	err := ldap.ConnectionTestWithAllConfig(ldapCfg.LdapConf, ldapCfg.LdapGroupConf)
@@ -77,4 +88,59 @@ func Ping(ldapCfg *models.LdapConfig) *models.LDAPTestResult {
 		return result.Fail().WithMsg(fmt.Sprintf("Error at connection test, %+v", err))
 	}
 	return result.Suc().WithMsg("Ping test success")
+}
+
+func SearchUser(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {
+	ret := &models.LDAPTestResult{}
+	fmt.Printf("Start to ping LDAP server: %v\n", ldapCfg.LdapURL)
+	session, err := ldap.CreateWithAllConfig(ldapCfg.LdapConf, ldapCfg.LdapGroupConf)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	session.Open()
+	defer session.Close()
+
+	fmt.Println("Start to search users")
+	result, err := session.SearchUser(test.User)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	if len(result) == 0 {
+		return ret.Fail().WithMsg(fmt.Sprintf("No LDAP user found in current search conditions."))
+	} else {
+		ret.Suc().WithMsg(fmt.Sprintf("Found %d LDAP users in current search conditions", len(result)))
+	}
+	if len(test.User) == 0 {
+		return ret.Fail().WithMsg("Please provide username to search")
+	}
+	fmt.Printf("Trying to find user %v\n")
+	singleUser, err := session.SearchUser(test.User)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	if len(singleUser) == 0 {
+		return ret.Fail().WithMsg(fmt.Sprintf("The user %v is not found!", test.User))
+	} else {
+		ret.WithMsg(fmt.Sprintf("User %v found!", test.User))
+		if len(singleUser[0].GroupDNList) == 0 {
+			ret.WithMsg("Current user is not in any ldap group.")
+		} else {
+			for _, dn := range singleUser[0].GroupDNList {
+				ret.WithMsg(fmt.Sprintf("User in the group with dn: [%v] OnboardGroup: %v", dn, SearchGroup(session, dn)))
+			}
+		}
+	}
+	return ret
+}
+
+func SearchGroup(session *ldap.Session, groupDN string) bool {
+	groups, err := session.SearchGroupByDN(groupDN)
+	if err != nil {
+		fmt.Printf("Failed to search group, error found %v", err)
+		return false
+	}
+	if len(groups) == 0 {
+		return false
+	}
+	return true
 }

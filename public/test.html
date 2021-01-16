@@ -41,10 +41,10 @@
                     <option value="search_user">Search User</option>
                 </select>
             </ul>
-            <ul>
+            <ul v-show=" test.type === 'search_user' " >
                 <input class="form-text" type="text" size="20" v-model = "test.user">
             </ul>
-            <ul>
+            <ul v-show="showDetail">
                 <p>Current configure</p>
                 <table>
                     <tr><td>ldap_url</td><td> {{ selectedConfig.ldap_url }}</td></tr>
@@ -81,6 +81,7 @@
                 selectedIndex: {},
                 selectedConfig:{},
                 test:{type:"", user:""},
+                showDetail: false,
                 configs: [],
                 success: false,
                 message: [],
@@ -109,7 +110,6 @@
                     this.$http.post('/testconfig/'+selectID, this.test).success(function(response) {
                         this.success = response.success
                         this.message = response.message
-
                         console.log("Ping test done!")
                         console.log(this.success)
                         console.log(this.message[0])
@@ -121,10 +121,12 @@
                 selectChange: function() {
                     if (!$.trim(this.selectedIndex)) {
                         console.log("not selected")
+                        this.showDetail = false
                         return
                     }
                     console.log("selected: "+ this.selectedIndex)
                     this.selectedConfig = this.configs[this.selectedIndex]
+                    this.showDetail = true
                 }
             }
         })

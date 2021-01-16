@@ -66,15 +66,15 @@
                     </tr>
                     <tr>
                         <td>LDAP UID</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" value="cn"/></td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" /></td>
                     </tr>
                     <tr>
                         <td>LDAP Verify Cert</td>
-                        <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" value="false"/></td>
+                        <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" /></td>
                     </tr>
                     <tr>
                         <td>LDAP scope</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" value="2"/></td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" /></td>
                     </tr>
                     <tr>
                         <td>LDAP Group Base DN</td>
@@ -86,15 +86,15 @@
                     </tr>
                     <tr>
                         <td>LDAP Group Name Attribute</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" value="cn"/></td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" /></td>
                     </tr>
                     <tr>
                         <td>LDAP Group Search Scope</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" value="2"/></td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" /></td>
                     </tr>
                     <tr>
                         <td>LDAP Group Membership Attribute</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" value="memberof"/></td>
+                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" /></td>
                     </tr>
                     <tr>
                         <td>LDAP Group Admin DN</td>
@@ -116,7 +116,14 @@
 
             data: {
                 configs: [],
-                newConfig: {}
+                newConfig: {
+                            ldap_scope: 2,
+                            ldap_uid: "cn",
+                            ldap_group_search_scope: 2,
+                            ldap_verify_cert: false,
+                            ldap_group_name_attribute: "cn",
+                            ldap_group_membership_attribute: "memberof"
+                           }
             },
 
             // This is run whenever the page is loaded to make sure we have a current task list

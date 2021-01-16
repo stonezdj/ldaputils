@@ -29,84 +29,122 @@
             <h2>Ldap Configs</h2>
             <ul class="list-group">
                 <li class="list-group-item" v-for="config in configs">
+                    <span class="pull-left">
+                        <input class="form-check-input" type="radio" value="{{$index}}" v-model="picked" >
+                    </span>
                     {{ config.name }}
                     <span class="pull-right">
                                 <button class="btn btn-xs btn-danger" @click="deleteConfig($index)">
                                     <i class="fa fa-trash-o" aria-hidden="true"></i>
                                 </button>
                     </span>
+
                 </li>
             </ul>
-            <p><a href="/test">Test LDAP config</a></p>
-            <div class="input-group">
+            <ul>
+                <button @click=" displayAdd = !displayAdd " >Add LDAP Configure</button>
+                <div class="input-group" v-show="displayAdd" >
+                    <table>
+                        <tr>
+                            <td>Config Name</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.name"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP url</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_url"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP base DN</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_base_dn"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP search DN</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_dn"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP search Password</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_password"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP filter</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_filter"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP UID</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Verify Cert</td>
+                            <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP scope</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Base DN</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_base_dn"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Filter</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_filter"/></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Name Attribute</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Search Scope</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Membership Attribute</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" /></td>
+                        </tr>
+                        <tr>
+                            <td>LDAP Group Admin DN</td>
+                            <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_admin_dn"/></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" align="center">
+                                <button type="button" @click="createConfig">Add</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div><!-- /input-group -->
+            </ul>
+            <ul v-show=" picked !== ''">
+                <p>Current configure</p>
                 <table>
-                    <tr>
-                        <td>Config Name</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.name"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP url</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_url"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP base DN</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_base_dn"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP search DN</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_dn"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP search Password</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_password"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP filter</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_filter"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP UID</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Verify Cert</td>
-                        <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP scope</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Base DN</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_base_dn"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Filter</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_filter"/></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Name Attribute</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Search Scope</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Membership Attribute</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" /></td>
-                    </tr>
-                    <tr>
-                        <td>LDAP Group Admin DN</td>
-                        <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_admin_dn"/></td>
-                    </tr>
-                    <tr>
-                        <td colspan="2" align="center">
-                        <button type="button" @click="createConfig">Create</button>
-                        </td>
-                    </tr>
+                    <tr><td>ldap_url</td><td> {{ configs[picked].ldap_url }}</td></tr>
+                    <tr><td>ldap_base_dn</td><td> {{ configs[picked].ldap_base_dn }}</td></tr>
+                    <tr><td>ldap_search_dn</td><td> {{ configs[picked].ldap_search_dn }}</td></tr>
+                    <tr><td>ldap_filter</td><td> {{ configs[picked].ldap_filter }}</td></tr>
+                    <tr><td>ldap_scope</td><td> {{ configs[picked].ldap_scope }}</td></tr>
+                    <tr><td>ldap_group_base_dn</td><td> {{ configs[picked].ldap_group_base_dn }}</td></tr>
+                    <tr><td>ldap_group_filter</td><td> {{ configs[picked].ldap_group_filter }}</td></tr>
+                    <tr><td>ldap_group_search_scope</td><td> {{ configs[picked].ldap_group_search_scope }}</td></tr>
+                    <tr><td>ldap_group_admin_dn</td><td> {{ configs[picked].ldap_group_admin_dn }}</td></tr>
                 </table>
-            </div><!-- /input-group -->
+                <ul class="list-group">
+                    <select class="form-select" aria-label="Default select example" v-model="test.type">
+                        <option value="ping">Ping test</option>
+                        <option value="search_user">Search User</option>
+                    </select>
+                </ul>
+                <ul v-show=" test.type === 'search_user' " >
+                    <input class="form-text" type="text" size="20" v-model = "test.user">
+                </ul>
+                <ul>
+                    <button type="button" @click="testConnection">Test</button>
+                </ul>
+                <ul>
+                    <p>
+                        {{ resultMessage }}
+                    </p>
+                </ul>
+            </ul>
+
         </div>
 
     </div>
@@ -116,6 +154,9 @@
 
             data: {
                 configs: [],
+                displayAdd: false,
+                picked: "",
+                resultMessage: "",
                 newConfig: {
                             ldap_scope: 2,
                             ldap_uid: "cn",
@@ -154,7 +195,25 @@
                         console.log(error)
                     });
                 },
-
+                testConnection: function() {
+                    if (!$.trim(this.picked)) {
+                        console.log("not selected")
+                        return
+                    }
+                    selectID = this.configs[this.picked].ID
+                    console.log("select id is ", selectID)
+                    // Post the new task to the /tasks route using the $http client
+                    this.$http.post('/testconfig/'+selectID, this.test).success(function(response) {
+                        this.success = response.success
+                        this.message = response.message
+                        console.log("Ping test done!")
+                        console.log(this.success)
+                        console.log(this.message[0])
+                        this.resultMessage = response.message.join(",")
+                    }).error(function(error) {
+                        console.log(error)
+                    });
+                },
                 deleteConfig: function(index) {
                     console.log("index:"+index)
                     // Use the $http client to delete a task by its id

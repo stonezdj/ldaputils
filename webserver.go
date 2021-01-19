@@ -25,6 +25,8 @@ func WebServer() {
 	// Routes
 	e.File("/", "public/index.html")
 	e.File("/test", "public/test.html")
+	e.File("/vue.js", "public/vue.js")
+	e.File("/sample", "public/sample.html")
 	e.GET("/configs", handlers.GetConfigs(db))
 	e.PUT("/configs", handlers.PutConfig(db))
 	e.DELETE("/configs/:id", handlers.DeleteConfig(db))

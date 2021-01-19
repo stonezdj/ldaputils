@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    <script src="vue.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
+    <!-- JQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <h2>Ldap Configs</h2>
+    <ul class="list-group">
+        <li class="list-group-item" v-for="(config, index) in configs">
+            <span class="pull-left">
+                <input class="form-check-input" type="radio" v-bind:value="index" v-model="picked" >
+            </span>
+             {{ config.name }}
+            <span class="pull-right">
+                <button class="btn btn-xs btn-danger" v-on:click="deleteConfig(index)">
+                    <i class="fa fa-trash-o" aria-hidden="true"></i>
+                </button>
+            </span>
+        </li>
+    </ul>
+    <ul>
+        <button @click=" displayAdd = !displayAdd " >Add LDAP Configure</button>
+        <button @click=" displayTest = !displayTest " >Test LDAP Configure</button>
+        <div class="input-group" v-show="displayAdd" >
+            <table>
+                <tr>
+                    <td>Config Name</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.name"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP url</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_url"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP base DN</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_base_dn"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP search DN</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_dn"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP search Password</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_search_password"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP filter</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_filter"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP UID</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_uid" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP Verify Cert</td>
+                    <td><input type="checkbox" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_verify_cert" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP scope</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_scope" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Base DN</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_base_dn"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Filter</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_filter"/></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Name Attribute</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_name_attribute" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Search Scope</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_search_scope" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Membership Attribute</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_membership_attribute" /></td>
+                </tr>
+                <tr>
+                    <td>LDAP Group Admin DN</td>
+                    <td><input type="text" class="form-control" v-on:keyup.enter="createConfig" v-model="newConfig.ldap_group_admin_dn"/></td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="center">
+                        <button type="button" @click="createConfig">Add</button>
+                    </td>
+                </tr>
+            </table>
+        </div><!-- /input-group -->
+    </ul>
+    <ul v-if="picked !== ''">
+        <p>Current configure</p>
+        <table>
+            <tr><td>ldap_url</td><td>{{ configs[picked].ldap_url }} </td></tr>
+            <tr><td>ldap_base_dn</td><td> {{ configs[picked].ldap_base_dn }}</td></tr>
+            <tr><td>ldap_search_dn</td><td> {{ configs[picked].ldap_search_dn }}</td></tr>
+            <tr><td>ldap_filter</td><td> {{ configs[picked].ldap_filter }}</td></tr>
+            <tr><td>ldap_scope</td><td> {{ configs[picked].ldap_scope }}</td></tr>
+            <tr><td>ldap_group_base_dn</td><td> {{ configs[picked].ldap_group_base_dn }}</td></tr>
+            <tr><td>ldap_group_filter</td><td> {{ configs[picked].ldap_group_filter }}</td></tr>
+            <tr><td>ldap_group_search_scope</td><td> {{ configs[picked].ldap_group_search_scope }}</td></tr>
+            <tr><td>ldap_group_admin_dn</td><td> {{ configs[picked].ldap_group_admin_dn }}</td></tr>
+        </table>
+        <div v-show="displayTest">
+            <ul class="list-group">
+                <select class="form-select" aria-label="Default select example" v-model="test.type">
+                    <option value="ping">Ping test</option>
+                    <option value="search_user">Search User</option>
+                </select>
+            </ul>
+            <ul v-show=" test.type === 'search_user' " >
+                <input class="form-text" type="text" size="20" v-model = "test.user">
+            </ul>
+            <ul>
+                <button type="button" @click="testConnection">Test</button>
+            </ul>
+            <ul>
+                <p>
+                    {{ resultMessage }}
+                </p>
+            </ul>
+        </div>
+    </ul>
+</div>
+
+    <script type="text/javascript">
+        var vm = new Vue({
+            el: '#app',
+            data: {
+            test:{type:"", user:""},
+            configs: [],
+            displayAdd: false,
+            displayTest: false,
+            picked: "",
+            success: false,
+            resultMessage: "",
+            newConfig: {
+                ldap_scope: 2,
+                ldap_uid: "cn",
+                ldap_group_search_scope: 2,
+                ldap_verify_cert: false,
+                ldap_group_name_attribute: "cn",
+                ldap_group_membership_attribute: "memberof"
+                }
+            },
+
+        // This is run whenever the page is loaded to make sure we have a current task list
+        created: function() {
+            // Use the vue-resource $http client to fetch data from the /configs route
+            this.$http.get('/configs').then(function(response) {
+            console.log("load data....")
+            this.configs = response.data.items ? response.data.items : []
+            })
+                console.log("load file")
+            },
+
+        methods: {
+            createConfig: function() {
+                if (!$.trim(this.newConfig.name)) {
+                    this.newConfig = {}
+                    return
+                }
+
+                // Post the new task to the /tasks route using the $http client
+                this.$http.put('/configs', this.newConfig).then(function(response) {
+                this.newConfig.id = response.created
+                this.configs.push(this.newConfig)
+                console.log("Config created!")
+                console.log(this.newConfig)
+                this.newConfig = {}
+                }, function(error) {
+                    console.log(error)
+                });
+            },
+
+            testConnection: function() {
+                if (!$.trim(this.picked)) {
+                    console.log("not selected")
+                    return
+                }
+                selectID = this.configs[this.picked].ID
+                console.log("select id is ", selectID)
+                // Post the new task to the /tasks route using the $http client
+                this.$http.post('/testconfig/'+selectID, this.test).then(function(response) {
+                this.success = response.body.success
+                this.message = response.body.message
+                console.log("Ping test done!")
+                console.log(this.success)
+                console.log(this.message)
+                this.resultMessage = response.body.message.join(",")
+                }, function(error) {
+                    console.log(error)
+                });
+
+                },
+
+            deleteConfig: function(index) {
+                console.log("index:"+index)
+                // Use the $http client to delete a task by its id
+                this.$http.delete('/configs/' + this.configs[index].ID).then(function(response) {
+                this.configs.splice(index, 1)
+                console.log("Config deleted!")
+                }, function(error) {
+                    console.log(error)
+                })
+                }
+        }
+    })
+</script>
+</body>
+</html>

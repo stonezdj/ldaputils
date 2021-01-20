@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    <!-- vue 2.6.2 -->
     <script src="vue.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="https://cdn.staticfile.org/vue-resource/1.5.1/vue-resource.min.js"></script>
@@ -128,11 +129,11 @@
             <ul>
                 <button type="button" @click="testConnection">Test</button>
             </ul>
-            <ul>
-                <p>
-                    {{ resultMessage }}
-                </p>
-            </ul>
+            <p> Success: {{ result.success }} </p>
+            <div v-for=" m in result.message ">
+                <p> {{ m }} </p>
+            </div>
+
         </div>
     </ul>
 </div>
@@ -141,33 +142,39 @@
         var vm = new Vue({
             el: '#app',
             data: {
-            test:{type:"", user:""},
-            configs: [],
-            displayAdd: false,
-            displayTest: false,
-            picked: "",
-            success: false,
-            resultMessage: "",
-            newConfig: {
-                ldap_scope: 2,
-                ldap_uid: "cn",
-                ldap_group_search_scope: 2,
-                ldap_verify_cert: false,
-                ldap_group_name_attribute: "cn",
-                ldap_group_membership_attribute: "memberof"
-                }
-            },
+                test:{type:"", user:""},
+                configs: [],
+                displayAdd: false,
+                displayTest: false,
+                picked: "",
+                success: false,
+                message: [],
+                result: {
+                    success: false,
+                    message: []
+                },
+                newConfig: {
+                    ldap_scope: 2,
+                    ldap_uid: "cn",
+                    ldap_group_search_scope: 2,
+                    ldap_verify_cert: false,
+                    ldap_group_name_attribute: "cn",
+                    ldap_group_membership_attribute: "memberof"
+                    }
+                },
 
         // This is run whenever the page is loaded to make sure we have a current task list
         created: function() {
             // Use the vue-resource $http client to fetch data from the /configs route
-            this.$http.get('/configs').then(function(response) {
-            console.log("load data....")
-            this.configs = response.data.items ? response.data.items : []
-            })
-                console.log("load file")
-            },
-
+            axios
+                .get('/configs')
+                .then(function (response) {
+                    vm.configs = response.data.items ? response.data.items : []
+                })
+                .catch(function (error) {
+                    console.log("failed to load data")
+                });
+        },
         methods: {
             createConfig: function() {
                 if (!$.trim(this.newConfig.name)) {
@@ -176,15 +183,19 @@
                 }
 
                 // Post the new task to the /tasks route using the $http client
-                this.$http.put('/configs', this.newConfig).then(function(response) {
-                this.newConfig.id = response.created
-                this.configs.push(this.newConfig)
-                console.log("Config created!")
-                console.log(this.newConfig)
-                this.newConfig = {}
-                }, function(error) {
-                    console.log(error)
-                });
+                axios
+                     .put('/configs', this.newConfig)
+                     .then(function (response){
+                         vm.newConfig.id = response.created
+                         vm.configs.push(vm.newConfig)
+                         vm.newConfig = {}
+                         console.log("Config created!")
+                     })
+                     .catch(function(error) {
+                         console.log(error)
+                    });
+                }
+
             },
 
             testConnection: function() {
@@ -194,29 +205,27 @@
                 }
                 selectID = this.configs[this.picked].ID
                 console.log("select id is ", selectID)
-                // Post the new task to the /tasks route using the $http client
-                this.$http.post('/testconfig/'+selectID, this.test).then(function(response) {
-                this.success = response.body.success
-                this.message = response.body.message
-                console.log("Ping test done!")
-                console.log(this.success)
-                console.log(this.message)
-                this.resultMessage = response.body.message.join(",")
-                }, function(error) {
-                    console.log(error)
-                });
+                axios
+                    .post('/testconfig/'+selectID, this.test)
+                    .then(response => (this.result = response.data))
+                    .catch(function (error) {
+                        console.log(error);
+                         });
 
                 },
 
             deleteConfig: function(index) {
                 console.log("index:"+index)
                 // Use the $http client to delete a task by its id
-                this.$http.delete('/configs/' + this.configs[index].ID).then(function(response) {
-                this.configs.splice(index, 1)
-                console.log("Config deleted!")
-                }, function(error) {
-                    console.log(error)
-                })
+                axios
+                    .delete('/configs/' + vm.configs[index].ID)
+                    .then(function(response) {
+                        vm.configs.splice(index, 1)
+                        console.log("Config deleted!")
+                    })
+                    .catch(function(error) {
+                        console.log(error)
+                    });
                 }
         }
     })

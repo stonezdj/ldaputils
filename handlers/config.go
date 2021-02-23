@@ -13,13 +13,15 @@ import (
 
 type H map[string]interface{}
 type Test struct {
-	Type string `json:"type"`
-	User string `json:"user"`
+	Type  string `json:"type"`
+	User  string `json:"user"`
+	Group string `json:"group"`
 }
 
 var TestingHandlerMap = map[string]TestingHandler{
-	"ping":        Ping,
-	"search_user": SearchUser,
+	"ping":              Ping,
+	"search_user":       SearchUser,
+	"test_group_config": TestGroupConfig,
 }
 
 // GetConfigs endpoint
@@ -88,6 +90,38 @@ func Ping(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {
 		return result.Fail().WithMsg(fmt.Sprintf("Error at connection test, %+v", err))
 	}
 	return result.Suc().WithMsg("Ping test success")
+}
+
+func TestGroupConfig(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {
+	ret := &models.LDAPTestResult{}
+	fmt.Printf("Start to test LDAP group config\n")
+	session, err := ldap.CreateWithAllConfig(ldapCfg.LdapConf, ldapCfg.LdapGroupConf)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	session.Open()
+	defer session.Close()
+
+	fmt.Println("Verify LDAP group configurations")
+
+	if len(ldapCfg.LdapGroupConf.LdapGroupBaseDN) == 0 {
+		ret.Fail().WithMsg("LDAP group DN is not configured")
+	}
+
+	fmt.Println("Trying to search group in current search conditions.")
+	if len(test.Group) == 0 {
+		return ret.Fail().WithMsg("Need to provide LDAP group name")
+	}
+	groups, err := session.SearchGroupByName(test.Group)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	if len(groups) == 0 {
+		return ret.Fail().WithMsg("No LDAP group found!")
+	} else {
+		return ret.Suc().WithMsg(fmt.Sprintf("Found %v groups in current condition.", len(groups)))
+	}
+
 }
 
 func SearchUser(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {

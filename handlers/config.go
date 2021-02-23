@@ -22,6 +22,7 @@ var TestingHandlerMap = map[string]TestingHandler{
 	"ping":              Ping,
 	"search_user":       SearchUser,
 	"test_group_config": TestGroupConfig,
+	"test_group_admin":  TestGroupAdminConfig,
 }
 
 // GetConfigs endpoint
@@ -122,6 +123,56 @@ func TestGroupConfig(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestRes
 		return ret.Suc().WithMsg(fmt.Sprintf("Found %v groups in current condition.", len(groups)))
 	}
 
+}
+
+func TestGroupAdminConfig(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {
+	ret := &models.LDAPTestResult{}
+	fmt.Printf("Start to test LDAP group config\n")
+	session, err := ldap.CreateWithAllConfig(ldapCfg.LdapConf, ldapCfg.LdapGroupConf)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	session.Open()
+	defer session.Close()
+
+	if len(ldapCfg.LdapGroupConf.LdapGroupAdminDN) == 0 {
+		return ret.Fail().WithMsg("The LDAP group admin DN is not configured.")
+	}
+	ret.WithMsg(fmt.Sprintf("Trying to search the group with admin privileges, ldap group admin dn: %v\n", ldapCfg.LdapGroupConf.LdapGroupAdminDN))
+
+	groups, err := session.SearchGroupByDN(ldapCfg.LdapGroupConf.LdapGroupAdminDN)
+	if err != nil {
+		return ret.FailWithError(err)
+	}
+	ret.WithMsg(fmt.Sprintf("Found %v groups with admin privileges.", len(groups)))
+
+	if len(groups) > 0 {
+		fmt.Printf("Trying to find users in this group: %v\n", ldapCfg.LdapGroupConf.LdapGroupAdminDN)
+		count := 0
+		userList, err := session.SearchUser("")
+		if err != nil {
+			ret.FailWithError(err)
+		}
+		for _, user := range userList {
+			if stringInSlice(ldapCfg.LdapGroupConf.LdapGroupAdminDN, user.GroupDNList) {
+				ret.WithMsg(fmt.Sprintf("username: %v, groupDNList=%+v", user.Username, user.GroupDNList))
+				count++
+			}
+		}
+		ret.WithMsg(fmt.Sprintf("Found %v users in this group", count))
+		return ret.Suc()
+	}
+	return ret.Fail().WithMsg("No admin group found!")
+
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func SearchUser(ldapCfg *models.LdapConfig, test *Test) *models.LDAPTestResult {

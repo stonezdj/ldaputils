@@ -19,7 +19,7 @@ compile_config_utils:
 container:
 	@echo "build container"
 	#@wget https://github.com/cloudfoundry/bosh-cli/releases/download/v6.4.1/bosh-cli-6.4.1-linux-amd64
-	@$(DOCKERCMD) build -t ldaputils:1.0 .
+	@$(DOCKERCMD) build -t ldaputils:2.0 .
 	@echo "Done."
 
 all: compile_config_utils container

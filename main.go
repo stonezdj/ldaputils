@@ -203,6 +203,11 @@ func SearchUser(session *ldap.Session, username *string) bool {
 			DumpResult(fmt.Sprintf("The user %v is not found!", *username))
 		} else {
 			DumpResult(fmt.Sprintf("User %v found!", *username))
+			if len(singleUser[0].Email) == 0 {
+				DumpResult("User email is empty!")
+			} else {
+				DumpResult(fmt.Sprintf("User email is %v", singleUser[0].Email))
+			}
 			if len(singleUser[0].GroupDNList) == 0 {
 				DumpResult("Current user is not in any ldap group.")
 			} else {

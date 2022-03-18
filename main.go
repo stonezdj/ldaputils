@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"io/ioutil"
 	"os"
 
@@ -182,7 +183,7 @@ func VerifyAdminGroupConfig(ldapConfigAll LDAPConfigAll, session *ldap.Session) 
 
 func SearchUser(session *ldap.Session, username *string) bool {
 	fmt.Println("Start to search users")
-	result, err := session.SearchUser("mike_0")
+	result, err := session.SearchUser(*username)
 	if err != nil {
 		DumpResult(fmt.Sprintf("Failed to search LDAP, error %v", err))
 		return false
@@ -211,9 +212,17 @@ func SearchUser(session *ldap.Session, username *string) bool {
 			if len(singleUser[0].GroupDNList) == 0 {
 				DumpResult("Current user is not in any ldap group.")
 			} else {
-				for _, dn := range singleUser[0].GroupDNList {
-					DumpResult(fmt.Sprintf("User in the group with dn: [%v] OnboardGroup: %v", dn, SearchGroup(session, dn)))
+
+				t := table.NewWriter()
+				t.SetOutputMirror(os.Stdout)
+				t.AppendHeader(table.Row{"#", "LDAP Group DN", "OnBoard"})
+				for i, dn := range singleUser[0].GroupDNList {
+					t.AppendRows([]table.Row{
+						{i + 1, dn, SearchGroup(session, dn)},
+					})
 				}
+				t.Render()
+
 			}
 		}
 	}

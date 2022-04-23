@@ -89,6 +89,13 @@ func main() {
 
 	session, err := ldap.CreateWithAllConfig(ldapConfigAll.LDAPConf, ldapConfigAll.LDAPGroupConf)
 	CheckError(err)
+
+	//Ping reachable first
+	if _, err := PingURL(ldapConfigAll.LDAPConf.LdapURL); err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	session.Open()
 	defer session.Close()
 	err = session.Bind(ldapConfigAll.LDAPConf.LdapSearchDn, ldapConfigAll.LDAPConf.LdapSearchPassword)

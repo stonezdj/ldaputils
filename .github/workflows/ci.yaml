@@ -16,17 +16,12 @@ jobs:
         - name: Build ldap utils
           run: |
             go build -o ldaputils
-        - name: Login to dockerhub
-          uses: docker/login-action@v3
+        - uses: mr-smithers-excellent/docker-build-push@v6
+          name: Build & push Docker image
           with:
-            username: ${{ vars.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
-        - name: Build container image with dockerfile
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./Dockerfile
-            push: true
-            tags: firstfloor/ldaputils:latest
+            image: repo/image
+            tags: v1, latest
+            registry: registry-url.io
+            dockerfile: Dockerfile.ci
             username: ${{ vars.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_TOKEN }}

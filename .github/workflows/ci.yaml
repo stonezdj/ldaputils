@@ -1,8 +1,5 @@
 name: Build ldap utils
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -19,4 +16,12 @@ jobs:
         - name: Build ldap utils
           run: |
             go build -o ldaputils
-            
+        - name: Build container image with dockerfile
+          uses: docker/build-push-action@v4
+          with:
+            context: .
+            file: ./Dockerfile
+            push: true
+            tags: firstfloor/ldap-utils:latest
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}

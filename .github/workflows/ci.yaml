@@ -16,7 +16,12 @@ jobs:
             go-version: '1.24'
         - name: Build ldap utils
           run: |
-            go build -o ldaputils
+            go build -o ldaputils            
+        - name: Setup Docker
+          uses: docker-practice/actions-setup-docker@master
+          with:
+            docker_version: 20.10
+            docker_channel: stable
         - name: Login to DockerHub and push image
           run: |
             docker login -u "${{ vars.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}"

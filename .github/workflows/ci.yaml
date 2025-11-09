@@ -24,7 +24,7 @@ jobs:
             docker_channel: stable
         - name: Login to DockerHub and push image
           run: |
-            docker login -u "${{ vars.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}"
+            docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_PASSWORD }}"
             docker build -t firstfloor/ldaputils:latest .
             docker push firstfloor/ldaputils:latest
         

@@ -3,7 +3,7 @@
 
 ## Usage
 
-Query LDAP user
+Query LDAP/Active Directory user
 ```
 docker run -it firstfloor/ldaputils:2.0 bash
 >ldaputils
@@ -30,3 +30,4 @@ Launch:
 
 Go to:
 http://localhost:8080/
+

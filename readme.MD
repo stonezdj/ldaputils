@@ -28,5 +28,5 @@ Trying to find user mike02
 Launch: 
 ./ldaputils -webserver
 
-Go to:
+Go to url:
 http://localhost:8080/

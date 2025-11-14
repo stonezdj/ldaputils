@@ -1,0 +1,19 @@
+name: Check CBot Commit
+
+on:
+  push:
+
+jobs:
+  check_cbot_commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit message
+      run: |
+        COMMIT_MSG="${{ github.event.head_commit.message }}"
+        echo "Commit message: $COMMIT_MSG"
+        
+        if [[ "$COMMIT_MSG" == CBot* ]]; then
+          echo "current commit is a cbot commit"
+        else
+          echo "commit is not a cbot commit"
+        fi

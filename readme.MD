@@ -28,6 +28,6 @@ Trying to find user mike02
 Launch: 
 ./ldaputils -webserver
 
-Go to the website2:
+Go to the website3:
 http://localhost:8080/
 

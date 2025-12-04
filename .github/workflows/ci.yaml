@@ -29,9 +29,11 @@ jobs:
             docker push firstfloor/ldaputils:latest
             touch build.log
             echo "Docker Image firstfloor/ldaputils:latest built and pushed successfully" >> build.log
+            exit 1
 
         - name: Upload build log
           uses: actions/upload-artifact@v4
+          if: always()
           with:
             path: build.log
             name: build-log

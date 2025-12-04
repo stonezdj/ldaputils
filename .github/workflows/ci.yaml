@@ -27,4 +27,14 @@ jobs:
             docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_TOKEN }}"
             docker build -t firstfloor/ldaputils:latest .
             docker push firstfloor/ldaputils:latest
+            touch build.log
+            echo "Docker Image firstfloor/ldaputils:latest built and pushed successfully" >> build.log
+
+        - name: Upload build log
+          uses: actions/upload-artifact@v4
+          with:
+            path: build.log
+            name: build-log
+
+          
         

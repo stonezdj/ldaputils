@@ -14,6 +14,9 @@ jobs:
           uses: actions/setup-go@v4
           with:
             go-version: '1.24'
+        - name: Dump proxy cache upstream registry
+          run: |
+            echo "PROXYCACHE_UPSTREAM_REGISTRY=${{ vars.PROXYCACHE_UPSTREAM_REGISTRY }}"
         - name: Build ldap utils
           run: |
             go build -o ldaputils            

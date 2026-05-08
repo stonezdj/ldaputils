@@ -3,7 +3,7 @@
 
 ## Usage
 
-Query LDAP/Active Directory user
+Query LDAP/Active Directory users
 ```
 docker run -it firstfloor/ldaputils:2.0 bash
 >ldaputils
@@ -25,7 +25,7 @@ Trying to find user mike02
 ================================================
 ```
 
-Launch: 
+Launch:
 ./ldaputils -webserver
 
 Go to the website3:

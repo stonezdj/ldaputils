@@ -1,0 +1,122 @@
+name: Parallel Multi-Arch Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+
+jobs:
+  # Job 1: Build the binary on amd64 and arm64 runners in parallel
+  build:
+    name: Build Binary (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false # Prevents one failing architecture from cancelling the other
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            # Github provides standard ARM64 runners for hosted environments.
+            # Using ubuntu-24.04-arm64 or ubuntu-latest-arm64 allows running on native ARM hardware.
+            runner: ubuntu-24.04-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Build ldaputils
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0 # Disable CGO to ensure fully static, portable binaries
+        run: |
+          echo "Building for OS: linux, Arch: ${{ matrix.arch }} on Native Runner: ${{ matrix.runner }}"
+          go build -v -o ldaputils-${{ matrix.arch }}
+          
+      - name: Run Tests
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          echo "Running tests natively on ${{ matrix.arch }}"
+          go test -v ./...
+
+      # Upload the compiled binary as a workflow artifact
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ldaputils-bin-${{ matrix.arch }}
+          path: ldaputils-${{ matrix.arch }}
+          retention-days: 1
+
+  # Job 2: Combine the built binaries into a single multi-arch Docker image
+  package:
+    name: Package Multi-Arch Docker Image
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Download the pre-compiled native binaries built in parallel
+      - name: Download amd64 Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: ldaputils-bin-amd64
+          path: bin/amd64
+
+      - name: Download arm64 Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: ldaputils-bin-arm64
+          path: bin/arm64
+
+      # Set up Docker Buildx for multi-platform imaging
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Optional login step if you want to push to a registry (e.g., GHCR or Docker Hub)
+      # - name: Log in to GitHub Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Prepare a multi-arch compatible Dockerfile that uses the precompiled binaries
+      - name: Prepare Docker Build Context
+        run: |
+          mkdir -p build_context
+          cp bin/amd64/ldaputils-amd64 build_context/ldaputils-amd64
+          cp bin/arm64/ldaputils-arm64 build_context/ldaputils-arm64
+          
+          # Write a multi-arch friendly Dockerfile that copies the correct binary per platform
+          cat << 'EOF' > build_context/Dockerfile
+          FROM photon:5.0
+          ARG TARGETARCH
+          RUN tdnf install -y vim >> /dev/null
+          COPY ldaputils-${TARGETARCH} /usr/local/bin/ldaputils
+          RUN chmod +x /usr/local/bin/ldaputils
+          EOF
+
+      # Build and push/load the multi-arch image using Buildx
+      # This builds for linux/amd64 and linux/arm64 concurrently using the pre-compiled binaries
+      - name: Build Multi-Arch Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: build_context
+          platforms: linux/amd64,linux/arm64
+          push: false # Set to true and configure registry login above to push
+          tags: firstfloor/ldaputils:latest

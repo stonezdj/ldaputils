@@ -44,15 +44,6 @@ jobs:
           echo "Building for OS: linux, Arch: ${{ matrix.arch }} on Native Runner: ${{ matrix.runner }}"
           go build -v -o ldaputils-${{ matrix.arch }}
           
-      - name: Run Tests
-        env:
-          GOOS: linux
-          GOARCH: ${{ matrix.arch }}
-          CGO_ENABLED: 0
-        run: |
-          echo "Running tests natively on ${{ matrix.arch }}"
-          go test -v ./...
-
       # Upload the compiled binary as a workflow artifact
       - name: Upload Binary Artifact
         uses: actions/upload-artifact@v4

@@ -36,17 +36,17 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push firstfloor/photon:5.0 multi-arch manifest
+      - name: Build and push firstfloor/zdjphoton:5.0 multi-arch manifest
         run: |
           set -x
           if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
             docker buildx build --platform linux/amd64,linux/arm64 \
-              -f multi_arch/Dockerfile -t firstfloor/photon:5.0 --push .
+              -f multi_arch/Dockerfile -t firstfloor/zdjphoton:5.0 --push .
             docker logout
           else
             echo "Secrets not available, building without push"
             docker buildx build --platform linux/amd64,linux/arm64 \
-              -f multi_arch/Dockerfile -t firstfloor/photon:5.0 .
+              -f multi_arch/Dockerfile -t firstfloor/zdjphoton:5.0 .
           fi
 

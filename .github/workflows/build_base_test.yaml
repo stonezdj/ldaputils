@@ -27,7 +27,12 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
+        with:
+          # Pin to a known-good binfmt image. The default "tonistiigi/binfmt:latest"
+          # has shipped broken releases that fail arm64 emulation with
+          # 'exec /bin/sh: no such file or directory' during container init.
+          image: tonistiigi/binfmt:qemu-v9.2.2
+          platforms: linux/amd64,linux/arm64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
